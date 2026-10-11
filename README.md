@@ -12,7 +12,6 @@ ZenPilot 是面向 Chrome、Zen 和 Firefox 的网页助手。你可以一边浏
 | :---: | :---: | :---: |
 | <img src="docs/images/welcome.png" alt="ZenPilot 欢迎页，展示快捷任务与输入区" width="250"> | <img src="docs/images/markdown.png" alt="ZenPilot 对话页，展示列表、表格与代码块" width="250"> | <img src="docs/images/history.png" alt="ZenPilot 历史对话页" width="250"> |
 
-*截图使用本地演示内容，展示 0.2.8 的实际侧栏界面。*
 
 ## 可以做什么
 
@@ -22,7 +21,6 @@ ZenPilot 是面向 Chrome、Zen 和 Firefox 的网页助手。你可以一边浏
 - **持续对话**：完整记录保存在本机，可搜索、重命名和删除。关闭侧栏后任务继续执行；重新打开同一对话可查看结果、确认操作或停止任务。
 - **自己决定操作方式**：可以逐步确认，也可以自动执行；还能选择「只聊天」，完全关闭网页工具。
 
-界面采用冷白与蓝紫色，并跟随系统亮暗主题；“当前网页 · 自动跟随”收成单行提示，悬停或聚焦时才显示完整网页标题。
 
 ## 下载与安装
 
@@ -80,5 +78,3 @@ npm run package
 ```
 
 打包后会生成 Chrome 与 Firefox 两个 ZIP。Firefox 源码可直接临时载入 `extension/`；Chrome 请加载 `build/chrome`。Markdown 解析与净化库随扩展打包，不从网络加载。更新依赖后运行 `npm run vendor` 同步文件与许可证。
-
-ZenPilot 独立实现，并非 Curio 的 fork，也没有复制其源码。
