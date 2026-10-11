@@ -1,0 +1,19 @@
+{
+  "manifest_version": 3,
+  "name": "ZenPilot",
+  "version": "0.2.0",
+  "description": "在 Zen 和 Firefox 侧栏中阅读网页、点击、填表并完成任务。",
+  "browser_specific_settings": {
+    "gecko": {
+      "id": "zenpilot@local.browser",
+      "strict_min_version": "140.0",
+      "data_collection_permissions": { "required": ["websiteContent", "browsingActivity"] }
+    }
+  },
+  "permissions": ["storage", "tabs", "scripting", "activeTab"],
+  "host_permissions": ["http://*/*", "https://*/*"],
+  "background": { "scripts": ["platform.js", "core.js", "chat-content.js", "sessions.js", "tools.js", "provider.js", "background.js"] },
+  "sidebar_action": { "default_title": "ZenPilot", "default_panel": "panel.html", "default_icon": "icon.svg" },
+  "action": { "default_title": "打开 ZenPilot", "default_icon": "icon.svg" },
+  "icons": { "48": "icon.svg", "96": "icon.svg" }
+}

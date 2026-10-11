@@ -1,0 +1,28 @@
+<!doctype html>
+<html lang="zh-CN">
+<head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>ZenPilot</title><link rel="stylesheet" href="panel.css"><link rel="stylesheet" href="markdown.css"><link rel="stylesheet" href="conversation.css"><link rel="stylesheet" href="design.css"></head>
+<body>
+  <header><div class="brand"><img src="icon.svg" alt=""><div><strong>ZenPilot</strong><span>AI 侧栏助手</span></div></div><div class="header-actions"><button id="history-toggle" class="icon-button" title="历史对话" aria-label="历史对话">◷</button><button id="settings-toggle" class="icon-button" title="设置" aria-label="打开设置">⚙</button></div></header>
+  <div class="session-bar"><span>对话</span><strong id="session-title">新对话</strong></div>
+  <section id="history-panel" hidden><div class="drawer-header"><h2>历史对话</h2><button id="history-close" aria-label="关闭历史对话">×</button></div><button id="history-new" class="primary">＋ 新建对话</button><input id="history-search" placeholder="搜索对话名称…" aria-label="搜索对话"><div id="session-list"></div><form id="rename-form"><input id="rename-title" maxlength="80" aria-label="对话名称" required><button id="rename-save">重命名</button></form><button id="delete-session">删除当前对话</button><div id="delete-confirmation" hidden><p>删除这段对话及其中保存的图片？此操作无法撤回。</p><div><button id="cancel-delete">取消</button><button id="confirm-delete">确认删除</button></div></div></section>
+  <section class="target"><span class="dot"></span><div><small id="target-label">当前网页 · 自动跟随</small><strong id="target-title">正在读取…</strong></div></section>
+  <section id="settings" hidden>
+    <h2>连接你的模型</h2><p class="muted">网页内容与截图会发送给你配置的模型服务。密钥只保存在本机扩展存储中。</p>
+    <form id="settings-form">
+      <label>接口类型<select id="api-mode"><option value="chat">Chat Completions 兼容接口</option><option value="responses">OpenAI Responses 接口</option></select></label>
+      <label>API 基础地址<input id="base-url" type="url" required placeholder="https://api.example.com/v1"></label>
+      <label>API 密钥<input id="api-key" type="password" autocomplete="off" placeholder="本机服务可以留空"></label>
+      <label>模型名称<input id="model" required placeholder="填写服务商提供的模型 ID"></label>
+      <label>任务步数上限<input id="max-steps" type="number" min="1" max="60" value="20" required></label>
+      <label class="check"><input id="auto" type="checkbox">自动执行网页操作</label><p class="muted">关闭时逐步确认点击、输入和导航。开启后直接执行你请求的任务。</p>
+      <button class="primary" type="submit">保存设置</button><span id="settings-status" role="status"></span>
+    </form>
+  </section>
+  <main id="conversation" aria-live="polite">
+    <div id="welcome"><span class="eyebrow">A QUIETER WAY TO BROWSE</span><h1>你好，<br>我是 ZenPilot</h1><p>问个问题，或让我帮你完成网页任务。<br>普通聊天无需访问当前页面。</p><div class="suggestions"><span class="suggestion-label">你可以试试这些任务</span><button data-prompt="总结当前网页的主要内容和关键要点。"><span class="suggestion-icon" aria-hidden="true">▤</span><span class="suggestion-copy"><strong>总结当前页面</strong><small>快速提取内容和要点</small></span><span class="suggestion-arrow" aria-hidden="true">↗</span></button><button data-prompt="根据我接下来提供的信息填写当前页面的表单，先检查需要哪些字段，不要提交。"><span class="suggestion-icon" aria-hidden="true">✎</span><span class="suggestion-copy"><strong>帮我填写表单</strong><small>检查字段，准备填写</small></span><span class="suggestion-arrow" aria-hidden="true">↗</span></button><button data-prompt="用 DuckDuckGo 搜索我接下来提供的主题，并根据来源整理结果。"><span class="suggestion-icon" aria-hidden="true">⌕</span><span class="suggestion-copy"><strong>搜索资料</strong><small>查找网页并整理信息</small></span><span class="suggestion-arrow" aria-hidden="true">↗</span></button></div></div>
+  </main>
+  <aside id="approval" hidden><strong>确认下一步操作</strong><pre id="approval-detail"></pre><div><button id="deny">停止任务</button><button id="allow" class="primary">允许这一步</button></div></aside>
+  <footer><div class="status"><span id="status">准备就绪</span><button id="clear">＋ 新对话</button></div><form id="chat-form"><div id="attachment-tray" class="attachment-tray" hidden></div><textarea id="prompt" rows="3" placeholder="输入问题或网页任务…" aria-label="任务内容" maxlength="12000"></textarea><input id="image-input" type="file" accept="image/png,image/jpeg,image/webp,image/gif" multiple hidden><div class="composer-bottom"><button id="attach-image" type="button" aria-label="添加图片" title="添加图片，也可以粘贴或拖入">▧ <span>图片</span></button><select id="conversation-mode" aria-label="对话方式"><option value="auto">自动判断</option><option value="chat">只聊天</option><option value="browser">网页助手</option></select><span id="mode-label">逐步确认</span><button id="stop" type="button" hidden>停止</button><button id="send" class="primary" type="submit" disabled aria-label="发送消息">➤</button></div></form><small class="footnote">图片会发送给所选模型，需支持视觉输入。</small></footer>
+  <dialog id="image-dialog"><button id="close-image" aria-label="关闭图片预览">关闭</button><img id="image-preview" alt="图片预览"></dialog>
+  <script src="platform.js"></script><script src="core.js"></script><script src="chat-content.js"></script><script src="vendor/marked.umd.js"></script><script src="vendor/purify.min.js"></script><script src="markdown.js"></script><script src="tab-context.js"></script><script src="attachments.js"></script><script src="session-ui.js"></script><script src="panel.js"></script>
+</body></html>
