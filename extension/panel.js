@@ -20,7 +20,7 @@
     }
     messages.append(el); messages.scrollTop = messages.scrollHeight; return el;
   }
-  function clearView() { for (const el of messages.querySelectorAll(".message,.tool")) el.remove(); rendered.clear(); lastTool = null; $("welcome").hidden = false; $("prompt").value = ""; attachments.clear(); $("status").textContent = "准备就绪"; }
+  function clearView() { for (const el of messages.querySelectorAll(".message,.tool")) el.remove(); rendered.clear(); lastTool = null; $("welcome").hidden = false; messages.scrollTop = 0; $("prompt").value = ""; attachments.clear(); $("status").textContent = "准备就绪"; }
   function renderEntry(entry) {
     if (entry.id && rendered.has(entry.id)) return;
     if (entry.id) rendered.add(entry.id);
