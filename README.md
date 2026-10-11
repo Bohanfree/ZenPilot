@@ -4,14 +4,13 @@
 
 ZenPilot 是面向 Chrome、Zen 和 Firefox 的网页助手。你可以一边浏览，一边让它回答问题、阅读页面、搜索资料，或逐步完成点击、填写和切换标签页等任务。关闭侧边栏后，正在运行的任务仍会在后台继续；重新打开同一对话，就能查看进度。
 
-**当前版本：0.2.8 开发预览版** · [下载最新版](https://github.com/Bohanfree/ZenPilot/releases/tag/v0.2.8) · [更新记录](CHANGELOG.md)
+**当前版本：0.2.9 开发预览版** · [下载最新版](https://github.com/Bohanfree/ZenPilot/releases/tag/v0.2.9) · [更新记录](CHANGELOG.md)
 
 ## 界面一览
 
 | 随时开始 | 清晰阅读 | 找回对话 |
 | :---: | :---: | :---: |
-| <img src="docs/images/welcome.png" alt="ZenPilot 欢迎页，展示快捷任务与输入区" width="250"> | <img src="docs/images/markdown.png" alt="ZenPilot 对话页，展示列表、表格与代码块" width="250"> | <img src="docs/images/history.png" alt="ZenPilot 历史对话页" width="250"> |
-
+| <img src="docs/images/welcome.jpg" alt="ZenPilot 欢迎页，展示快捷任务与输入区" width="250"> | <img src="docs/images/markdown.jpg" alt="ZenPilot 对话页，展示列表、表格与代码块" width="250"> | <img src="docs/images/history.jpg" alt="ZenPilot 历史对话页" width="250"> |
 
 ## 可以做什么
 
@@ -21,12 +20,11 @@ ZenPilot 是面向 Chrome、Zen 和 Firefox 的网页助手。你可以一边浏
 - **持续对话**：完整记录保存在本机，可搜索、重命名和删除。关闭侧栏后任务继续执行；重新打开同一对话可查看结果、确认操作或停止任务。
 - **自己决定操作方式**：可以逐步确认，也可以自动执行；还能选择「只聊天」，完全关闭网页工具。
 
-
 ## 下载与安装
 
 ### Chrome 116+
 
-1. 下载 [Chrome 安装包](https://github.com/Bohanfree/ZenPilot/releases/download/v0.2.8/zenpilot-0.2.8-chrome.zip)，解压到固定目录。
+1. 下载 [Chrome 安装包](https://github.com/Bohanfree/ZenPilot/releases/download/v0.2.9/zenpilot-0.2.9-chrome.zip)，解压到固定目录。
 2. 打开 `chrome://extensions`，开启「开发者模式」。
 3. 点击「加载已解压的扩展程序」，选择解压后直接包含 `manifest.json` 的文件夹。
 4. 固定 ZenPilot 扩展按钮，点击它打开侧栏。
@@ -35,7 +33,7 @@ ZenPilot 是面向 Chrome、Zen 和 Firefox 的网页助手。你可以一边浏
 
 ### Zen / Firefox 140+
 
-1. 下载 [Firefox / Zen 安装包](https://github.com/Bohanfree/ZenPilot/releases/download/v0.2.8/zenpilot-0.2.8-firefox.zip) 并解压。
+1. 下载 [Firefox / Zen 安装包](https://github.com/Bohanfree/ZenPilot/releases/download/v0.2.9/zenpilot-0.2.9-firefox.zip) 并解压。
 2. 打开 `about:debugging#/runtime/this-firefox`，点击「临时载入附加组件」。
 3. 选择解压目录中的 `manifest.json`，再从扩展按钮或浏览器侧栏菜单打开 ZenPilot。
 
@@ -78,3 +76,4 @@ npm run package
 ```
 
 打包后会生成 Chrome 与 Firefox 两个 ZIP。Firefox 源码可直接临时载入 `extension/`；Chrome 请加载 `build/chrome`。Markdown 解析与净化库随扩展打包，不从网络加载。更新依赖后运行 `npm run vendor` 同步文件与许可证。
+

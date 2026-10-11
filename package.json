@@ -1,6 +1,6 @@
 {
   "name": "zenpilot",
-  "version": "0.2.8",
+  "version": "0.2.9",
   "private": true,
   "description": "A Chrome, Firefox and Zen sidebar agent for browser tasks",
   "scripts": {
