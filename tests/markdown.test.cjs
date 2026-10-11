@@ -17,6 +17,15 @@ test('Chinese replies render emphasis, paragraphs and nested lists', () => {
   assert.equal(main.querySelectorAll('ul ul').length, 1); assert.equal(main.querySelector('em').textContent, '精简显示');
   assert.ok(!main.textContent.includes('**Zen Mods**')); dom.window.close();
 });
+test('Chinese bold markers render next to CJK text and punctuation', () => {
+  const { dom, render } = fixture();
+  const main = render('标题为**《Mac 软件代下》**，作者提供下载服务。\n\n- **如何委托：**告知作者软件名称或提供软件链接。\n- **积分说明：**帖子标注服务价格。\n\n免费购买了 123Mac 和 ma*ked 站的会员。\n\n\`**代码示例**\`');
+  assert.deepEqual([...main.querySelectorAll('strong')].map(node => node.textContent), ['《Mac 软件代下》', '如何委托：', '积分说明：']);
+  assert.ok(!main.textContent.includes('**《Mac 软件代下》**'));
+  assert.ok(main.textContent.includes('ma*ked'));
+  assert.equal(main.querySelector('code').textContent, '**代码示例**');
+  dom.window.close();
+});
 test('code preserves indentation, adds language and a working copy button', async () => {
   const { dom, window, render } = fixture(); let copied;
   Object.defineProperty(window.navigator, 'clipboard', { value: { writeText: async text => { copied = text; } } });

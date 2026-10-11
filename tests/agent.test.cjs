@@ -71,7 +71,7 @@ test('screenshot is sent transiently in both API formats', () => {
   assert.equal(chat[0].role, 'tool'); assert.equal(chat[1].content[1].image_url.url, result.image);
   assert.equal(responses[0].type, 'function_call_output'); assert.equal(responses[1].content[1].type, 'input_image');
 });
-test('disconnecting one sidebar does not abort another sidebar task', async () => {
+test('disconnecting a sidebar leaves its task and other windows running', async () => {
   const s = setup(); const pendingRequests = [];
   s.context.ZP.request = async (settings, messages, signal) => new Promise((resolve, reject) => { pendingRequests.push(signal); signal.addEventListener('abort', () => reject(new DOMException('Stopped', 'AbortError'))); });
   function panel(tabId) {
@@ -83,8 +83,8 @@ test('disconnecting one sidebar does not abort another sidebar task', async () =
   const disconnectOne = panel(1), disconnectTwo = panel(3);
   await new Promise(resolve => setImmediate(resolve));
   assert.equal(pendingRequests.length, 2);
-  disconnectOne(); assert.equal(pendingRequests[0].aborted, true); assert.equal(pendingRequests[1].aborted, false);
-  disconnectTwo();
+  disconnectOne(); assert.equal(pendingRequests[0].aborted, false); assert.equal(pendingRequests[1].aborted, false);
+  disconnectTwo(); assert.equal(pendingRequests[1].aborted, false);
 });
 test('step cap is bounded and malformed values are rejected', () => {
   const { context: { ZP } } = setup();
@@ -209,15 +209,46 @@ test('background durably saves user and assistant messages before reporting comp
   assert.equal(saved.entries.length, 2); assert.equal(saved.entries[0].content, 'My saved question'); assert.equal(saved.entries[1].content, 'My saved answer');
   assert.equal(result.events.filter(e => e.type === 'entry').length, 2);
 });
-test('closing a sidebar retains its user message and records the interruption', async () => {
+test('closing a sidebar lets the task finish and reopening restores its transcript', async () => {
   const s = setup(), session = await s.context.ZP.sessions.create();
-  let messageListener, disconnect, finish, entered;
-  const completed = new Promise(resolve => { finish = resolve; });
+  let messageListener, disconnect, release, entered;
   const started = new Promise(resolve => { entered = resolve; });
-  s.context.ZP.request = async (settings, messages, signal) => new Promise((resolve, reject) => { entered(); signal.addEventListener('abort', () => reject(new DOMException('Stopped', 'AbortError'))); });
-  const port = { name: 'zenpilot-panel', postMessage(event) { if (event.type === 'stopped') finish(); }, onMessage: { addListener(fn) { messageListener = fn; } }, onDisconnect: { addListener(fn) { disconnect = fn; } } };
+  s.context.ZP.request = async () => new Promise(resolve => { release = resolve; entered(); });
+  const port = { name: 'zenpilot-panel', postMessage() {}, onMessage: { addListener(fn) { messageListener = fn; } }, onDisconnect: { addListener(fn) { disconnect = fn; } } };
   s.ports[0](port); messageListener({ type: 'start', text: 'Keep this question', sessionId: session.id, mode: 'chat' });
-  await started; disconnect(); await completed;
+  await started; disconnect();
+  const reopenedEvents = []; let reopenedListener;
+  const reopened = { name: 'zenpilot-panel', postMessage(event) { reopenedEvents.push(event); }, onMessage: { addListener(fn) { reopenedListener = fn; } }, onDisconnect: { addListener() {} } };
+  s.ports[0](reopened); reopenedListener({ type: 'attach', sessionId: session.id });
+  assert.equal(reopenedEvents[0].type, 'sync'); assert.equal(reopenedEvents[0].running, true);
+  release({ text: 'Finished in the background', calls: [], raw: {} });
+  for (let i = 0; i < 20 && !reopenedEvents.some(event => event.type === 'done'); i++) await new Promise(resolve => setImmediate(resolve));
+  assert.ok(reopenedEvents.some(event => event.type === 'done'));
   const saved = await s.context.ZP.sessions.read(session.id);
-  assert.equal(saved.entries[0].content, 'Keep this question'); assert.equal(saved.entries.at(-1).role, 'note');
+  assert.equal(saved.entries[0].content, 'Keep this question');
+  assert.equal(saved.entries.at(-1).content, 'Finished in the background');
+  assert.equal(saved.entries.at(-1).role, 'assistant');
+});
+test('an approval can be resumed after reopening and the task can be stopped', async () => {
+  const s = setup(), session = await s.context.ZP.sessions.create();
+  s.browser.storage.local.get = async () => ({ settings: { model: 'test-model', auto: false } });
+  s.context.ZP.request = async () => ({ text: '', calls: [{ id: 'call-1', name: 'click', arguments: '{"target":"e1"}' }], raw: { role: 'assistant', content: '' } });
+  function panel() {
+    const events = []; let receive, disconnect;
+    const port = { name: 'zenpilot-panel', postMessage(event) { events.push(event); }, onMessage: { addListener(fn) { receive = fn; } }, onDisconnect: { addListener(fn) { disconnect = fn; } } };
+    s.ports[0](port);
+    return { events, receive: event => receive(event), disconnect: () => disconnect() };
+  }
+  const first = panel();
+  first.receive({ type: 'start', text: 'Click it', sessionId: session.id, mode: 'browser', tabId: 1, windowId: 10 });
+  for (let i = 0; i < 20 && !first.events.some(event => event.type === 'approval'); i++) await new Promise(resolve => setImmediate(resolve));
+  assert.ok(first.events.some(event => event.type === 'approval'));
+  first.disconnect();
+  const reopened = panel(); reopened.receive({ type: 'attach', sessionId: session.id });
+  assert.equal(reopened.events[0].running, true);
+  assert.equal(reopened.events[1].type, 'approval');
+  reopened.receive({ type: 'stop' });
+  for (let i = 0; i < 20 && !reopened.events.some(event => event.type === 'stopped'); i++) await new Promise(resolve => setImmediate(resolve));
+  assert.ok(reopened.events.some(event => event.type === 'stopped'));
+  assert.deepEqual(s.injected, []);
 });
