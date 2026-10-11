@@ -1,6 +1,6 @@
 (() => {
   const $ = id => document.getElementById(id);
-  let port, busy = false, boundTab, pending, lastTool, heartbeat;
+  let port, busy = false, boundTab, pending, lastTool, heartbeat, reconnectTimer, reconnecting = false;
   const rendered = new Set();
   const messages = $("conversation");
   const follower = ZP.createTabFollower({ onChange: target, isBusy: () => busy });
@@ -35,10 +35,25 @@
   function setBusy(value) { busy = value; $("stop").hidden = !value; $("clear").disabled = value; $("conversation-mode").disabled = value; $("target-label").textContent = value ? "当前对话" : "当前网页 · 自动跟随"; sessions.setBusy(); updateSend(); if (!value) { $("approval").hidden = true; pending = null; } }
   function target(tab) { boundTab = tab; $("target-title").textContent = tab.title || tab.url || "请选择普通网页"; $("target-title").title = tab.url || ""; }
   function connect() {
+    if (port) return;
     port = browser.runtime.connect({ name: "zenpilot-panel" });
+    const connection = port;
     clearInterval(heartbeat);
     heartbeat = setInterval(() => { if (busy && port) { try { port.postMessage({ type: "ping" }); } catch (_) {} } }, 20000);
     port.onMessage.addListener(event => {
+      if (event.type === "sync") {
+        if (event.running) {
+          setBusy(true);
+          $("status").textContent = event.browser ? `网页任务 · ${event.step || 1} / ${event.max || "?"} 轮` : "正在思考…";
+          if (event.browser) $("target-label").textContent = "网页任务 · 目标已固定";
+          if (Number.isInteger(event.tabId)) void browser.tabs.get(event.tabId).then(target).catch(() => {});
+        } else {
+          setBusy(false);
+          if (reconnecting) $("status").textContent = "后台任务已中断，请检查对话记录";
+        }
+        reconnecting = false;
+        void sessions.syncCurrent().catch(() => {});
+      }
       if (event.type === "start") { if (event.tab) target(event.tab); $("status").textContent = "正在思考…"; }
       if (event.type === "browser_enabled") { $("target-label").textContent = "网页任务 · 目标已固定"; $("status").textContent = "正在处理网页任务"; }
       if (event.type === "target") target(event.tab);
@@ -66,7 +81,16 @@
         setBusy(false); void sessions.refresh().catch(() => {}); void follower.refresh().catch(() => {});
       }
     });
-    port.onDisconnect.addListener(() => { clearInterval(heartbeat); setBusy(false); $("status").textContent = "连接已断开，下次任务会重新连接"; port = null; void follower.refresh().catch(() => {}); });
+    port.onDisconnect.addListener(() => {
+      if (port !== connection) return;
+      clearInterval(heartbeat);
+      reconnecting = busy;
+      $("status").textContent = "正在重新连接后台任务…";
+      port = null;
+      clearTimeout(reconnectTimer);
+      reconnectTimer = setTimeout(() => { try { connect(); } catch (_) { $("status").textContent = "后台连接失败，请重新打开侧栏"; } }, 1000);
+    });
+    if (sessions.id) port.postMessage({ type: "attach", sessionId: sessions.id });
   }
   $("conversation-mode").addEventListener("change", () => void browser.storage.local.set({ conversationMode: $("conversation-mode").value }));
   $("settings-toggle").addEventListener("click", () => { $("settings").hidden = !$("settings").hidden; });

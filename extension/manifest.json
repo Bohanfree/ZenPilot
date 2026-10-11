@@ -1,7 +1,7 @@
 {
   "manifest_version": 3,
   "name": "ZenPilot",
-  "version": "0.2.1",
+  "version": "0.2.8",
   "description": "在 Zen 和 Firefox 侧栏中阅读网页、点击、填表并完成任务。",
   "browser_specific_settings": {
     "gecko": {

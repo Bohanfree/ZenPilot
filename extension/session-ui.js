@@ -23,6 +23,13 @@ ZP.createSessionUI = function ({ isBusy, getWindowId, renderEntry, clearView, re
     onChange?.();
   }
   async function refresh() { items = await request("list"); renderList(); }
+  async function syncCurrent() {
+    if (!activeId) return;
+    const id = activeId, data = await request("read", { id });
+    if (activeId !== id || !data.session) return;
+    for (const entry of data.entries) renderEntry(entry);
+    await refresh();
+  }
   async function load(id) {
     if (isBusy() || loading) return;
     loading = true; renderList(); const current = ++revision;
@@ -54,7 +61,7 @@ ZP.createSessionUI = function ({ isBusy, getWindowId, renderEntry, clearView, re
     catch (error) { report(error.message); }
   });
   return {
-    get id() { return activeId; }, get loading() { return loading || creating; }, refresh, create,
+    get id() { return activeId; }, get loading() { return loading || creating; }, refresh, syncCurrent, create,
     setBusy() { renderList(); },
     async init() {
       await refresh();

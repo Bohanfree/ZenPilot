@@ -1,1 +1,9 @@
-<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96"><rect width="96" height="96" rx="25" fill="#202123"/><path d="M25 30h44L29 66h42" stroke="#ffffff" stroke-width="9" fill="none" stroke-linecap="round" stroke-linejoin="round"/><circle cx="72" cy="24" r="7" fill="#aeb1b6"/></svg>
+<svg xmlns="http://www.w3.org/2000/svg" width="96" height="96" viewBox="0 0 96 96">
+  <defs>
+    <linearGradient id="tile" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#30345f"/><stop offset=".56" stop-color="#111f3d"/><stop offset="1" stop-color="#07172d"/></linearGradient>
+    <linearGradient id="letter" x1=".15" y1=".1" x2=".85" y2=".95"><stop stop-color="#fff"/><stop offset=".52" stop-color="#f7f9ff"/><stop offset="1" stop-color="#7478ff"/></linearGradient>
+  </defs>
+  <rect width="96" height="96" rx="24" fill="url(#tile)"/>
+  <path d="M28 29h39L29 67h39" fill="none" stroke="url(#letter)" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="m76 15 2.2 6.8L85 24l-6.8 2.2L76 33l-2.2-6.8L67 24l6.8-2.2z" fill="#fff"/>
+</svg>

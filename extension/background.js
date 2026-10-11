@@ -1,6 +1,24 @@
 (() => {
   const runs = new Map();
+  const portRuns = new Map();
   const sessionOwners = new Map();
+  let keepAlive;
+  function maintainWorker() {
+    if (!browser.sidePanel || typeof setInterval !== "function") return;
+    if (runs.size && !keepAlive) keepAlive = setInterval(() => {
+      try { void browser.runtime.getPlatformInfo?.(); } catch (_) {}
+    }, 20000);
+    if (!runs.size && keepAlive) { clearInterval(keepAlive); keepAlive = null; }
+  }
+  function attach(port, sessionId) {
+    const run = sessionOwners.get(sessionId);
+    if (!run) { port.postMessage({ type: "sync", running: false }); return; }
+    if (portRuns.has(port) && portRuns.get(port) !== run) { port.postMessage({ type: "error", text: "请先停止当前任务。" }); return; }
+    if (run.port && run.port !== port) portRuns.delete(run.port);
+    run.port = port; portRuns.set(port, run);
+    port.postMessage({ type: "sync", running: true, sessionId, step: run.step, max: run.settings?.maxSteps, browser: run.webEnabled, tabId: run.tabId, windowId: run.windowId });
+    if (run.pending) port.postMessage(run.pending.event);
+  }
   let initializing;
   function ensureSessions() {
     if (!initializing) initializing = browser.storage.local.get(null).then(data => ZP.sessions.migrate(data)).catch(error => { initializing = null; throw error; });
@@ -37,21 +55,25 @@
     const id = crypto.randomUUID();
     await new Promise((resolve, reject) => {
       const finish = allowed => {
-        clearTimeout(timer); run.controller.signal.removeEventListener("abort", stop); run.pending = null;
+        run.controller.signal.removeEventListener("abort", stop); run.pending = null;
         if (allowed) resolve(); else reject(new DOMException("操作未获确认，任务已停止", "AbortError"));
       };
       const stop = () => finish(false);
-      const timer = setTimeout(() => finish(false), 180000);
-      run.pending = { id, finish };
+      const event = { type: "approval", id, name, args, tabId: run.tabId };
+      run.pending = { id, finish, event };
       run.controller.signal.addEventListener("abort", stop, { once: true });
-      run.emit({ type: "approval", id, name, args, tabId: run.tabId });
+      run.emit(event);
     });
   }
   async function start(port, msg) {
-    if (runs.has(port)) { port.postMessage({ type: "error", text: "请先停止当前任务。" }); return; }
-    const emit = event => { try { port.postMessage(event); } catch (_) {} };
-    const run = { controller: new AbortController(), emit, pending: null };
-    runs.set(port, run);
+    if (portRuns.has(port)) { port.postMessage({ type: "error", text: "请先停止当前任务。" }); return; }
+    if (typeof msg.sessionId === "string" && sessionOwners.has(msg.sessionId)) { port.postMessage({ type: "error", text: "这段对话正在运行，请先停止任务。" }); return; }
+    const run = { id: crypto.randomUUID(), sessionId: typeof msg.sessionId === "string" ? msg.sessionId : undefined, port, controller: new AbortController(), pending: null, step: 0, webEnabled: false };
+    run.emit = event => { try { run.port?.postMessage(event); } catch (_) {} };
+    const emit = run.emit;
+    runs.set(run.id, run); portRuns.set(port, run);
+    if (run.sessionId) sessionOwners.set(run.sessionId, run);
+    maintainWorker();
     async function deliver(entry, fallback) {
       if (run.sessionId) { const saved = await ZP.sessions.append(run.sessionId, entry); emit({ type: "entry", entry: saved }); return true; }
       else if (fallback) emit(fallback);
@@ -62,9 +84,7 @@
       const attachments = ZP.validateAttachments(msg.attachments);
       if (!msg.text.trim() && !attachments.length) throw new Error("请输入问题或附加图片。");
       let previous = Array.isArray(msg.history) ? msg.history : [];
-      if (typeof msg.sessionId === "string") {
-        if (sessionOwners.has(msg.sessionId)) throw new Error("这段对话正在另一个侧栏中运行，请稍后再试。");
-        run.sessionId = msg.sessionId; sessionOwners.set(run.sessionId, port);
+      if (run.sessionId) {
         await ensureSessions();
         const saved = await ZP.sessions.read(run.sessionId);
         if (!saved.session) throw new Error("对话不存在，请新建对话。");
@@ -96,6 +116,7 @@
       let consecutiveErrors = 0;
       for (let step = 1; step <= settings.maxSteps; step++) {
         ZP.abort(run.controller.signal);
+        run.step = step;
         emit({ type: "progress", step, max: settings.maxSteps, browser: run.webEnabled });
         const tools = run.webEnabled ? ZP.tools : mode === "chat" ? [] : ZP.browserGate;
         const answer = await ZP.request(settings, messages, run.controller.signal, { tools });
@@ -150,18 +171,26 @@
       let saved = false;
       try { saved = await deliver({ role: type === "error" ? "error" : "note", content: text }); } catch (_) {}
       emit({ type, ...(saved ? {} : { text }) });
-    } finally { if (runs.get(port) === run) runs.delete(port); if (sessionOwners.get(run.sessionId) === port) sessionOwners.delete(run.sessionId); }
+    } finally {
+      runs.delete(run.id);
+      if (run.port && portRuns.get(run.port) === run) portRuns.delete(run.port);
+      if (sessionOwners.get(run.sessionId) === run) sessionOwners.delete(run.sessionId);
+      maintainWorker();
+    }
   }
   browser.runtime.onConnect.addListener(port => {
     if (port.name !== "zenpilot-panel") return;
     port.onMessage.addListener(msg => {
       // Port traffic keeps Chrome's worker alive during requests and approvals.
       if (msg.type === "ping") { try { port.postMessage({ type: "pong" }); } catch (_) {} return; }
+      if (msg.type === "attach" && typeof msg.sessionId === "string") attach(port, msg.sessionId);
       if (msg.type === "start") void start(port, msg);
-      if (msg.type === "stop") runs.get(port)?.controller.abort();
-      if (msg.type === "approve") { const run = runs.get(port); if (run?.pending?.id === msg.id) run.pending.finish(msg.allow === true); }
+      if (msg.type === "stop") portRuns.get(port)?.controller.abort();
+      if (msg.type === "approve") { const run = portRuns.get(port); if (run?.pending?.id === msg.id) run.pending.finish(msg.allow === true); }
     });
-    // A sidebar only owns its own task; another window remains independent.
-    port.onDisconnect.addListener(() => runs.get(port)?.controller.abort());
+    port.onDisconnect.addListener(() => {
+      const run = portRuns.get(port);
+      if (run) { run.port = null; portRuns.delete(port); }
+    });
   });
 })();

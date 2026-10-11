@@ -1,6 +1,14 @@
 (() => {
   const escape = text => String(text).replace(/[&<>"']/g, char => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[char]);
-  const parser = new marked.Marked({ gfm: true, breaks: true, renderer: {
+  const parser = new marked.Marked({ gfm: true, breaks: true, extensions: [{
+    name: "cjkStrong", level: "inline",
+    start: source => source.indexOf("**"),
+    tokenizer(source) {
+      const match = /^\*\*([^\n*]+?)\*\*/.exec(source);
+      if (!match || !/[\u3400-\u9fff]/u.test(match[1]) || /^\s|\s$/.test(match[1])) return;
+      return { type: "strong", raw: match[0], text: match[1], tokens: this.lexer.inlineTokens(match[1]) };
+    }
+  }], renderer: {
     html: token => escape(token.text),
     image: token => `<span class="image-description">${escape(token.text || "图片")}</span>`,
     checkbox: token => `<span class="task-checkbox">${token.checked ? "☑" : "☐"}</span>`
