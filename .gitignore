@@ -1,0 +1,8 @@
+node_modules/
+dist/
+build/
+output/
+tmp/
+preview*.jpg
+.env
+.env.*
