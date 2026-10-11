@@ -2,13 +2,13 @@
 
 面向 Chrome / Zen / Firefox 的独立侧栏网页助手，帮助你聊天、识图、点击、填表和完成网页任务。从头实现，没有复制 Curio 源码，也不是其 fork。
 
-当前版本：**0.2.0 开发预览版**。GitHub 发布提供源码和两个浏览器安装包；尚未上架 Chrome Web Store 或 Mozilla AMO。当前界面仍为初版，生图设计稿未成功生成，视觉改版尚未完成。
+当前版本：**0.2.1 开发预览版**。GitHub 发布提供源码和两个浏览器安装包；尚未上架 Chrome Web Store 或 Mozilla AMO。
 
 ## 在 Chrome 安装
 
 需要桌面 Chrome 116 或更新版本。
 
-1. 从 Releases 下载 `zenpilot-0.2.0-chrome.zip` 并解压到固定目录。
+1. 从 Releases 下载 `zenpilot-0.2.1-chrome.zip` 并解压到固定目录。
 2. 打开 `chrome://extensions`，开启右上角「开发者模式」。
 3. 点击「加载已解压的扩展程序」，选择解压后直接包含 `manifest.json` 的文件夹。
 4. 固定 ZenPilot 扩展按钮，点击打开原生侧栏，配置 API 地址、密钥和模型。
@@ -27,7 +27,7 @@
 - 支持截图视觉分析，截图仅保留在本次模型请求上下文中。
 - 逐步确认 / 自动执行；停止任务；任务步数上限；多窗口任务互不影响。
 - 自定义 API 地址、密钥和模型，支持 Chat Completions 兼容接口及 OpenAI Responses。
-- 中文侧栏，跟随系统亮暗主题；完整对话按会话保存，支持新建、切换、搜索名称、重命名和删除。网页工具只保存简短结果，不保存网页截图。
+- 中性黑白灰的中文侧栏，跟随系统亮暗主题；完整对话按会话保存，支持新建、切换、搜索名称、重命名和删除。网页工具只保存简短结果，不保存网页截图。
 - 用户图片附件支持选择文件、粘贴、拖入和预览；图片随对话保存。每条消息最多 4 张，原图每张最多 20 MB，发送前缩小到最长边 2048 像素并转换为 JPEG；GIF 只取首帧。
 - Markdown 回复支持加粗、列表、标题、引用、表格和代码块；表格横向滚动，代码可复制。
 - 默认自动判断：普通问题直接回答，只有明确需要网页时才开放网页工具。也可以选择「只聊天」，完全关闭网页工具；内部页面也能聊天。
@@ -37,7 +37,7 @@
 需要 Firefox 140 或基于 Firefox 140 或更新版本的 Zen。当前是开发预览版，尚未完成真实模型与各浏览器的完整实机兼容性验证或 Mozilla 签名。
 
 1. 在 Zen 打开 `about:debugging#/runtime/this-firefox`。
-2. 下载 `zenpilot-0.2.0-firefox.zip` 并解压，点击「临时载入附加组件」，选择解压目录中的 `manifest.json`；从源码使用则选择 `extension/manifest.json`。
+2. 下载 `zenpilot-0.2.1-firefox.zip` 并解压，点击「临时载入附加组件」，选择解压目录中的 `manifest.json`；从源码使用则选择 `extension/manifest.json`。
 3. 从扩展按钮或浏览器侧栏菜单打开 ZenPilot。
 4. 点击齿轮，配置 API 基础地址（例如 `https://api.example.com/v1`，不要填完整 `/chat/completions` 路径）、密钥和模型。
 5. 选择服务商支持的接口类型。模型必须支持工具调用；截图还要求视觉能力。仅兼容聊天的服务商请选择 Chat Completions；要求 Responses 的模型请选择 Responses。
@@ -89,4 +89,4 @@ npm run build
 npm run package
 ```
 
-打包产物位于 `dist/zenpilot-0.2.0-chrome.zip` 和 `dist/zenpilot-0.2.0-firefox.zip`。测试覆盖 Chrome 后台加载、消息回调、截图目标检查、双浏览器打包，以及用户图片的两种 API 格式、完整会话持久化、普通聊天分流、Markdown 排版、标签页绑定和停止任务；不代替真实浏览器与真实模型的兼容性测试。
+打包产物位于 `dist/zenpilot-0.2.1-chrome.zip` 和 `dist/zenpilot-0.2.1-firefox.zip`。测试覆盖 Chrome 后台加载、消息回调、截图目标检查、双浏览器打包，以及用户图片的两种 API 格式、完整会话持久化、普通聊天分流、Markdown 排版、标签页绑定和停止任务；不代替真实浏览器与真实模型的兼容性测试。
