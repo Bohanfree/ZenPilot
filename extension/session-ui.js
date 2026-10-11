@@ -18,6 +18,7 @@ ZP.createSessionUI = function ({ isBusy, getWindowId, renderEntry, clearView, re
     }
     const current = items.find(item => item.id === activeId);
     $("session-title").textContent = current?.title || "新对话";
+    $("history-toggle").title = `历史对话 · ${current?.title || "新对话"}`;
     if (document.activeElement !== $("rename-title")) $("rename-title").value = current?.title || "";
     for (const id of ["history-new", "rename-save", "delete-session", "confirm-delete"]) $(id).disabled = isBusy() || loading || creating || !activeId;
     onChange?.();

@@ -31,8 +31,8 @@
     if (entry.status === "error") lastTool.classList.add("error");
     messages.scrollTop = messages.scrollHeight;
   }
-  function updateSend() { const waiting = busy || attachments.processing || sessions.loading; $("send").disabled = waiting || !sessions.id; $("attach-image").disabled = waiting; $("clear").disabled = waiting; }
-  function setBusy(value) { busy = value; $("stop").hidden = !value; $("clear").disabled = value; $("conversation-mode").disabled = value; $("target-label").textContent = value ? "当前对话" : "当前网页 · 自动跟随"; sessions.setBusy(); updateSend(); if (!value) { $("approval").hidden = true; pending = null; } }
+  function updateSend() { const waiting = busy || attachments.processing || sessions.loading; $("send").disabled = waiting || !sessions.id; $("attach-image").disabled = waiting; $("clear").disabled = waiting; document.querySelector(".footnote").hidden = !attachments.images.length; }
+  function setBusy(value) { busy = value; document.body.classList.toggle("task-active", value); $("stop").hidden = !value; $("clear").disabled = value; $("conversation-mode").disabled = value; if (!value) document.querySelector(".target").hidden = true; sessions.setBusy(); updateSend(); if (!value) { $("approval").hidden = true; pending = null; } }
   function target(tab) { boundTab = tab; $("target-title").textContent = tab.title || tab.url || "请选择普通网页"; $("target-title").title = tab.url || ""; }
   function connect() {
     if (port) return;
@@ -45,6 +45,7 @@
         if (event.running) {
           setBusy(true);
           $("status").textContent = event.browser ? `网页任务 · ${event.step || 1} / ${event.max || "?"} 轮` : "正在思考…";
+          document.querySelector(".target").hidden = !event.browser;
           if (event.browser) $("target-label").textContent = "网页任务 · 目标已固定";
           if (Number.isInteger(event.tabId)) void browser.tabs.get(event.tabId).then(target).catch(() => {});
         } else {
@@ -55,9 +56,9 @@
         void sessions.syncCurrent().catch(() => {});
       }
       if (event.type === "start") { if (event.tab) target(event.tab); $("status").textContent = "正在思考…"; }
-      if (event.type === "browser_enabled") { $("target-label").textContent = "网页任务 · 目标已固定"; $("status").textContent = "正在处理网页任务"; }
+      if (event.type === "browser_enabled") { document.querySelector(".target").hidden = false; $("target-label").textContent = "网页任务 · 目标已固定"; $("status").textContent = "正在处理网页任务"; }
       if (event.type === "target") target(event.tab);
-      if (event.type === "progress") $("status").textContent = event.browser ? `网页任务 · ${event.step} / ${event.max} 轮` : "正在思考…";
+      if (event.type === "progress") { if (event.browser) document.querySelector(".target").hidden = false; $("status").textContent = event.browser ? `网页任务 · ${event.step} / ${event.max} 轮` : "正在思考…"; }
       if (event.type === "entry") { renderEntry(event.entry); void sessions.refresh().catch(() => {}); }
       if (event.type === "assistant") write(event.text);
       if (event.type === "tool") {
@@ -99,7 +100,7 @@
     try {
       const settings = { mode: $("api-mode").value, baseUrl: $("base-url").value.trim(), apiKey: $("api-key").value.trim(), model: $("model").value.trim(), maxSteps: ZP.steps($("max-steps").value), auto: $("auto").checked };
       ZP.endpoint(settings);
-      await browser.storage.local.set({ settings }); $("settings-status").textContent = "已保存"; $("mode-label").textContent = settings.auto ? "自动执行" : "逐步确认";
+      await browser.storage.local.set({ settings }); $("settings-status").textContent = "已保存"; $("conversation-mode").title = settings.auto ? "网页操作会自动执行" : "网页操作需要逐步确认";
     } catch (error) { $("settings-status").textContent = error.message; }
   });
   $("chat-form").addEventListener("submit", async event => {
@@ -125,7 +126,7 @@
     const data = await browser.storage.local.get(["settings", "conversationMode"]);
     const settings = { ...ZP.defaults, ...data.settings };
     $("api-mode").value = settings.mode; $("base-url").value = settings.baseUrl; $("api-key").value = settings.apiKey; $("model").value = settings.model; $("max-steps").value = settings.maxSteps; $("auto").checked = settings.auto;
-    $("mode-label").textContent = settings.auto ? "自动执行" : "逐步确认";
+    $("conversation-mode").title = settings.auto ? "网页操作会自动执行" : "网页操作需要逐步确认";
     $("conversation-mode").value = ["auto", "chat", "browser"].includes(data.conversationMode) ? data.conversationMode : "auto";
     await sessions.init(); updateSend();
     if (!settings.model) $("settings").hidden = false;
